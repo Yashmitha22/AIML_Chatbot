@@ -70,13 +70,16 @@ class AdvancedVoiceAssistant:
     
     def setup_apis(self):
         """Setup multiple API options"""
+        # Check for Gemini API key first (preferred name)
+        gemini_key = os.getenv('GEMINI_API_KEY') or os.getenv('GOOGLE_API_KEY')
+        
         self.apis = {
             'openai': {
                 'key': os.getenv('OPENAI_API_KEY'),
                 'available': False
             },
             'google': {
-                'key': os.getenv('GOOGLE_API_KEY'),
+                'key': gemini_key,
                 'available': False
             }
         }
@@ -85,18 +88,15 @@ class AdvancedVoiceAssistant:
         for api_name, config in self.apis.items():
             if config['key'] and config['key'] != f'your_{api_name}_api_key_here':
                 config['available'] = True
-                print(f"✅ {api_name.upper()} API configured")
+                if api_name == 'google':
+                    print(f"✅ Google Gemini API configured")
+                else:
+                    print(f"✅ {api_name.upper()} API configured")
             else:
-                print(f"⚠️  {api_name.upper()} API not configured")
-        
-        # Specific check for Gemini
-        gemini_key = os.getenv('GEMINI_API_KEY')
-        if gemini_key and gemini_key != 'your_google_gemini_api_key_here':
-            self.apis['google']['key'] = gemini_key
-            self.apis['google']['available'] = True
-            print("✅ Google Gemini API configured")
-        else:
-            print("⚠️  Google Gemini API not configured")
+                if api_name == 'google':
+                    print(f"⚠️  Google Gemini API not configured")
+                else:
+                    print(f"⚠️  {api_name.upper()} API not configured")
     
     def speak(self, text: str):
         """Enhanced speak function with better formatting"""
@@ -345,12 +345,18 @@ Question: {question}"""
                     if user_input and self.wake_word.lower() in user_input.lower():
                         self.is_awake = True
                         self.speak("Yes, how can I help you?")
+                    elif user_input:
+                        # If they said something but not the wake word, check if it might be a question
+                        if any(word in user_input.lower() for word in ['what', 'how', 'when', 'where', 'why', 'who', 'tell', 'can']):
+                            print(f"📢 Detected question without wake word: {user_input}")
+                            self.speak("I heard you, but please say my name Pari first to wake me up, then ask your question.")
                 else:
                     # 2. Listen for command
                     print("🎤 Listening for your command...")
                     command = self.listen_for_command()
                     
                     if command:
+                        print(f"🎯 Processing command: {command}")
                         # Process the command
                         should_continue, was_special = self.handle_special_commands(command)
                         
@@ -360,19 +366,20 @@ Question: {question}"""
                         if not was_special:
                             print("🤔 Processing your question...")
                             response = self.process_question(command)
-                            print(f"📝 Response ready: {response[:100]}...")
+                            print(f"📝 Response ready: {response[:50]}...")
                             if response:
                                 self.speak(response)
                             else:
                                 self.speak("I'm sorry, I couldn't process that question.")
                         
-                        # After handling a command, decide whether to stay awake or go back to sleep
-                        # For now, we stay awake until told to sleep
+                        # Stay awake for a bit longer to allow follow-up questions
+                        print("💭 Staying awake for follow-up questions...")
                         
                     else:
-                        # No command heard, go back to sleep
+                        # No command heard, go back to sleep after 2 failed attempts
+                        print("🔇 No command heard, going back to sleep...")
                         self.is_awake = False
-                        self.speak("I didn't hear anything. I'll wait for you to call me again.")
+                        self.speak("I didn't hear anything. Say Pari to wake me up again.")
 
                 time.sleep(0.1)
                 
@@ -382,11 +389,11 @@ Question: {question}"""
 
     def listen_for_wake_word(self) -> Optional[str]:
         """Listens specifically for the wake word."""
-        return self.listen_with_timeout(timeout=5, phrase_time_limit=4)
+        return self.listen_with_timeout(timeout=8, phrase_time_limit=5)
 
     def listen_for_command(self) -> Optional[str]:
         """Listens for a command after being woken up."""
-        return self.listen_with_timeout(timeout=5, phrase_time_limit=15)
+        return self.listen_with_timeout(timeout=8, phrase_time_limit=20)
 
 def main():
     """Main function"""
