@@ -164,10 +164,10 @@ def test_api_key():
             # Test API connection (optional)
             try:
                 import openai
-                openai.api_key = openai_key
+                client = openai.OpenAI(api_key=openai_key)
                 
                 # Simple test call
-                response = openai.ChatCompletion.create(
+                response = client.chat.completions.create(
                     model="gpt-3.5-turbo",
                     messages=[{"role": "user", "content": "Say hello"}],
                     max_tokens=5

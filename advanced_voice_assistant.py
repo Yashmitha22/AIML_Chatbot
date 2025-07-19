@@ -105,7 +105,7 @@ class AdvancedVoiceAssistant:
         """Get response from OpenAI API"""
         try:
             import openai
-            openai.api_key = self.apis['openai']['key']
+            client = openai.OpenAI(api_key=self.apis['openai']['key'])
             
             # Add context from conversation history
             messages = [
@@ -118,7 +118,7 @@ class AdvancedVoiceAssistant:
             
             messages.append({"role": "user", "content": question})
             
-            response = openai.ChatCompletion.create(
+            response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=messages,
                 max_tokens=200,

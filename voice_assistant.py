@@ -47,8 +47,7 @@ class VoiceAssistant:
             print("⚠️  Please set your OpenAI API key in the .env file")
             self.openai_client = None
         else:
-            openai.api_key = api_key
-            self.openai_client = openai
+            self.openai_client = openai.OpenAI(api_key=api_key)
             print("✅ OpenAI API initialized successfully")
     
     def speak(self, text: str):
@@ -111,7 +110,7 @@ class VoiceAssistant:
             return "Sorry, the AI service is not configured. Please check your API key."
         
         try:
-            response = openai.ChatCompletion.create(
+            response = self.openai_client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": "You are a helpful voice assistant. Keep your responses concise and conversational, suitable for speech. Limit responses to 2-3 sentences unless specifically asked for more detail."},
