@@ -99,35 +99,42 @@ class AdvancedVoiceAssistant:
                     print(f"⚠️  {api_name.upper()} API not configured")
     
     def speak(self, text: str):
-        """Enhanced speak function with better formatting"""
+        """Enhanced speak function with better formatting and reliability"""
         if not text:
             return
             
         # Clean up text for better speech
         text = text.replace('*', '').replace('#', '').replace('`', '')
         text = text.replace('\\n', ' ').replace('\\t', ' ')
+        text = text.replace('_', ' ').replace('-', ' ')
         # Remove excessive whitespace
         text = ' '.join(text.split())
         
         print(f"🤖 Pari: {text}")
+        print("🔊 Speaking now...")  # Clear indication that voice is starting
         
         try:
             # Ensure TTS engine is ready
             self.tts_engine.stop()  # Stop any current speech
+            time.sleep(0.1)  # Brief pause
             self.tts_engine.say(text)
             self.tts_engine.runAndWait()
-            print("✅ Speech completed")
+            print("✅ Voice output completed")
+            time.sleep(0.2)  # Brief pause after speech
         except Exception as e:
             print(f"❌ Speech error: {e}")
             # Try to reinitialize TTS if there's an error
             try:
+                print("🔄 Reinitializing voice engine...")
                 self.tts_engine = pyttsx3.init()
                 self.setup_tts()
+                time.sleep(0.1)
                 self.tts_engine.say(text)
                 self.tts_engine.runAndWait()
-                print("✅ Speech completed after reinit")
+                print("✅ Voice output completed after reinit")
             except Exception as e2:
-                print(f"❌ Speech still failed: {e2}")
+                print(f"❌ Voice still failed: {e2}")
+                print("🔧 Please check your audio system!")
     
     def listen_with_timeout(self, timeout: int = 3, phrase_time_limit: int = 15) -> Optional[str]:
         """Enhanced listening with better error handling"""
