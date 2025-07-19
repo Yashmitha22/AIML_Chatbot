@@ -338,9 +338,11 @@ Question: {question}"""
     
     def run(self):
         """Main assistant loop with improved two-step listening"""
-        self.speak(f"Hello! I'm {self.wake_word}, your voice assistant. Just say my name to wake me up!")
+        self.speak(f"Hello! I'm {self.wake_word}, your voice assistant. You can say my name followed by your question, or just say my name first and then ask.")
         print(f"🚀 Voice Assistant '{self.wake_word}' is running!")
-        print(f"💬 Say '{self.wake_word}' to activate me.")
+        print(f"💬 Two ways to use me:")
+        print(f"   1. Say '{self.wake_word}' then wait, then ask your question")
+        print(f"   2. Say '{self.wake_word}, what is your name?' (all at once)")
         print("🛑 Say 'Pari stop' or 'Pari quit' to exit\n")
         
         try:
@@ -353,10 +355,28 @@ Question: {question}"""
                         self.is_awake = True
                         self.speak("Yes, how can I help you?")
                     elif user_input:
-                        # If they said something but not the wake word, check if it might be a question
-                        if any(word in user_input.lower() for word in ['what', 'how', 'when', 'where', 'why', 'who', 'tell', 'can']):
-                            print(f"📢 Detected question without wake word: {user_input}")
-                            self.speak("I heard you, but please say my name Pari first to wake me up, then ask your question.")
+                        # Check if they said "Pari" with their question
+                        if self.wake_word.lower() in user_input.lower():
+                            # Extract the question part after "Pari"
+                            question_part = user_input.lower().replace(self.wake_word.lower(), "").strip()
+                            if question_part:
+                                print(f"🎯 Wake word + question detected: {user_input}")
+                                self.speak("Yes, I heard you!")
+                                # Process the question immediately
+                                response = self.process_question(question_part)
+                                if response:
+                                    self.speak(response)
+                                else:
+                                    self.speak("I'm sorry, I couldn't process that question.")
+                                continue
+                            else:
+                                self.is_awake = True
+                                self.speak("Yes, how can I help you?")
+                        else:
+                            # If they said something but not the wake word, check if it might be a question
+                            if any(word in user_input.lower() for word in ['what', 'how', 'when', 'where', 'why', 'who', 'tell', 'can']):
+                                print(f"📢 Detected question without wake word: {user_input}")
+                                self.speak(f"I heard you ask '{user_input}', but please say my name Pari first. Try saying 'Pari, {user_input}'")
                 else:
                     # 2. Listen for command
                     print("🎤 Listening for your command...")
