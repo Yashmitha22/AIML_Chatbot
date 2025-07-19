@@ -27,7 +27,8 @@ def select_voice():
         print(f"Voice {i}:")
         print(f"  Name: {voice.name}")
         print(f"  ID: {voice.id}")
-        print(f"  Gender: {'Female' if 'zira' in voice.name.lower() or 'female' in voice.name.lower() or i == 1 else 'Male'}")
+        gender = "Female" if any(keyword in voice.name.lower() for keyword in ['zira', 'female', 'woman']) else "Male"
+        print(f"  Gender: {gender}")
         print()
     
     # Test each voice
@@ -35,27 +36,34 @@ def select_voice():
     
     for i, voice in enumerate(voices):
         print(f"🔊 Testing Voice {i}: {voice.name}")
-        tts_engine.setProperty('voice', voice.id)
-        tts_engine.setProperty('rate', 180)
-        tts_engine.setProperty('volume', 1.0)
-        
-        tts_engine.say(test_text)
-        tts_engine.runAndWait()
-        
-        response = input(f"Do you like Voice {i} ({voice.name})? (y/n): ").lower().strip()
-        if response == 'y' or response == 'yes':
-            print(f"✅ Great! You selected: {voice.name}")
-            print(f"Voice ID: {voice.id}")
-            print(f"Voice Index: {i}")
+        try:
+            tts_engine.setProperty('voice', voice.id)
+            tts_engine.setProperty('rate', 180)
+            tts_engine.setProperty('volume', 1.0)
+            
+            tts_engine.say(test_text)
+            tts_engine.runAndWait()
+            
+            response = input(f"Do you like Voice {i} ({voice.name})? (y/n): ").lower().strip()
+            if response == 'y' or response == 'yes':
+                print(f"✅ Great! You selected: {voice.name}")
+                print(f"Voice ID: {voice.id}")
+                print(f"Voice Index: {i}")
+                print()
+                print("To use this voice in your assistant, remember:")
+                print(f"- Voice Index: {i}")
+                print(f"- Voice ID: {voice.id}")
+                return i, voice.id, voice.name
             print()
-            print("To use this voice in your assistant, remember:")
-            print(f"- Voice Index: {i}")
-            print(f"- Voice ID: {voice.id}")
-            return i, voice.id, voice.name
-        print()
+        except Exception as e:
+            print(f"❌ Error testing voice {i}: {e}")
+            print()
     
     print("No voice selected. Using default.")
-    return 0, voices[0].id, voices[0].name
+    if voices:
+        return 0, voices[0].id, voices[0].name
+    else:
+        return None, None, None
 
 if __name__ == "__main__":
     select_voice()
