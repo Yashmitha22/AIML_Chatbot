@@ -31,6 +31,7 @@ class AdvancedVoiceAssistant:
         # Assistant settings
         self.wake_word = "Pari"
         self.conversation_history = []
+        self.is_awake = False  # State to track if assistant is active
         
     def setup_tts(self):
         """Configure text-to-speech with better settings"""
@@ -45,7 +46,7 @@ class AdvancedVoiceAssistant:
                 self.tts_engine.setProperty('voice', voices[0].id)
         
         self.tts_engine.setProperty('rate', 180)
-        self.tts_engine.setProperty('volume', 0.8)
+        self.tts_engine.setProperty('volume', 0.9)
     
     def setup_apis(self):
         """Setup multiple API options"""
@@ -76,7 +77,7 @@ class AdvancedVoiceAssistant:
         self.tts_engine.say(text)
         self.tts_engine.runAndWait()
     
-    def listen_with_timeout(self, timeout: int = 2, phrase_time_limit: int = 8) -> Optional[str]:
+    def listen_with_timeout(self, timeout: int = 3, phrase_time_limit: int = 15) -> Optional[str]:
         """Enhanced listening with better error handling"""
         try:
             with self.microphone as source:
@@ -86,6 +87,7 @@ class AdvancedVoiceAssistant:
                 # Listen with specified timeout
                 audio = self.recognizer.listen(source, timeout=timeout, phrase_time_limit=phrase_time_limit)
             
+            print("🔄 Processing speech...")
             # Try to recognize speech
             text = self.recognizer.recognize_google(audio)
             print(f"👤 You said: {text}")
@@ -211,6 +213,11 @@ class AdvancedVoiceAssistant:
         """Handle special commands. Returns (should_continue, was_special_command)"""
         command_lower = command.lower()
         
+        if any(word in command_lower for word in ['stop listening', 'go to sleep', 'cancel']):
+            self.is_awake = False
+            self.speak("Okay, I'll go back to sleep. Just say my name if you need me.")
+            return True, True
+        
         if any(word in command_lower for word in ['stop', 'exit', 'quit', 'goodbye', 'bye']):
             self.speak("Goodbye! It was nice talking with you!")
             return False, True
@@ -233,70 +240,59 @@ class AdvancedVoiceAssistant:
         return True, False
     
     def run(self):
-        """Main assistant loop"""
-        self.speak("Hello! I'm Pari, your advanced voice assistant. I'm ready to help you with anything you need!")
-        print(f"🚀 Voice Assistant 'Pari' is running!")
-        print(f"💬 Say '{self.wake_word}' followed by your question")
-        print("🔧 Special commands: 'time', 'date', 'clear history', 'stop'")
+        """Main assistant loop with improved two-step listening"""
+        self.speak(f"Hello! I'm {self.wake_word}, your voice assistant. Just say my name to wake me up!")
+        print(f"🚀 Voice Assistant '{self.wake_word}' is running!")
+        print(f"💬 Say '{self.wake_word}' to activate me.")
         print("🛑 Say 'Pari stop' or 'Pari quit' to exit\n")
         
         try:
             while True:
-                # Listen for wake word + command in one go
-                user_input = self.listen_with_timeout(timeout=3, phrase_time_limit=15)
-                
-                if user_input:
-                    user_input_lower = user_input.lower()
-                    print(f"🔍 Checking for wake word in: '{user_input_lower}'")
+                if not self.is_awake:
+                    # 1. Listen for wake word
+                    print(f"👂 Listening for wake word '{self.wake_word}'...")
+                    user_input = self.listen_for_wake_word()
+                    if user_input and self.wake_word.lower() in user_input.lower():
+                        self.is_awake = True
+                        self.speak("Yes, how can I help you?")
+                else:
+                    # 2. Listen for command
+                    print("🎤 Listening for your command...")
+                    command = self.listen_for_command()
                     
-                    # Define wake words based on the set wake_word
-                    wake_words = [self.wake_word.lower(), f'hey {self.wake_word.lower()}']
-                    wake_found = False
-                    command = ""
-                    
-                    # Check if any wake word is present
-                    for wake in wake_words:
-                        if wake in user_input_lower:
-                            wake_found = True
-                            # Extract command after wake word
-                            if wake in user_input_lower:
-                                parts = user_input_lower.split(wake, 1)
-                                if len(parts) > 1:
-                                    command = parts[1].strip()
-                                else:
-                                    command = ""
-                            break
-                    
-                    if wake_found:
-                        print(f"✅ Wake word detected! Command: '{command}'")
-                        print("🛑 Stopped listening - Processing your request...")
+                    if command:
+                        # Process the command
+                        should_continue, was_special = self.handle_special_commands(command)
                         
-                        if command:
-                            # Handle special commands
-                            should_continue, was_special = self.handle_special_commands(command)
-                            
-                            if not should_continue:
-                                break
-                            
-                            if not was_special:
-                                # Process as regular question
-                                print("🤔 Processing your question...")
-                                response = self.process_question(command)
-                                self.speak(response)
-                        else:
-                            self.speak("Yes, how can I help you?")
+                        if not should_continue:
+                            break # Exit loop
                         
-                        print("👂 Ready to listen again...")
+                        if not was_special:
+                            print("🤔 Processing your question...")
+                            response = self.process_question(command)
+                            self.speak(response)
+                        
+                        # After handling a command, decide whether to stay awake or go back to sleep
+                        # For now, we stay awake until told to sleep
                         
                     else:
-                        print("⚠️  Wake word not detected. Try saying 'Pari' or 'Hey Pari' first.")
-                
-                # Brief pause before listening again
-                time.sleep(0.5)
+                        # No command heard, go back to sleep
+                        self.is_awake = False
+                        self.speak("I didn't hear anything. I'll wait for you to call me again.")
+
+                time.sleep(0.1)
                 
         except KeyboardInterrupt:
             print("\n🛑 Voice Assistant stopped by user")
             self.speak("Goodbye!")
+
+    def listen_for_wake_word(self) -> Optional[str]:
+        """Listens specifically for the wake word."""
+        return self.listen_with_timeout(timeout=5, phrase_time_limit=4)
+
+    def listen_for_command(self) -> Optional[str]:
+        """Listens for a command after being woken up."""
+        return self.listen_with_timeout(timeout=5, phrase_time_limit=15)
 
 def main():
     """Main function"""
