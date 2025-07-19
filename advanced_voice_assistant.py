@@ -109,7 +109,7 @@ class AdvancedVoiceAssistant:
             
             # Add context from conversation history
             messages = [
-                {"role": "system", "content": "You are a helpful voice assistant. Keep responses concise and conversational. Limit to 2-3 sentences unless asked for more detail."}
+                {"role": "system", "content": "You are Pari, a friendly and helpful voice assistant. Keep responses concise and conversational, suitable for speech. Always be warm and personable. Limit responses to 2-3 sentences unless asked for more detail. Always respond as if you're speaking out loud to the user."}
             ]
             
             # Add recent conversation history
@@ -162,36 +162,50 @@ class AdvancedVoiceAssistant:
         question_lower = question.lower()
         
         if any(word in question_lower for word in ['hello', 'hi', 'hey']):
-            return "Hello! How can I help you today?"
+            return "Hello! I'm Pari, your voice assistant. How can I help you today?"
         
         elif any(word in question_lower for word in ['how are you', 'how do you do']):
-            return "I'm doing well, thank you for asking! How are you?"
+            return "I'm doing wonderful, thank you for asking! I'm excited to help you. How are you doing?"
         
         elif 'weather' in question_lower:
-            return "I don't have access to weather data right now, but you can check your local weather app or website."
+            return "I don't have access to current weather data right now, but I recommend checking your local weather app or asking about a specific location online."
         
-        elif any(word in question_lower for word in ['joke', 'funny']):
+        elif any(word in question_lower for word in ['joke', 'funny', 'tell me a joke']):
             jokes = [
                 "Why don't scientists trust atoms? Because they make up everything!",
                 "Why did the scarecrow win an award? He was outstanding in his field!",
                 "Why don't eggs tell jokes? They'd crack each other up!",
                 "What do you call a fake noodle? An impasta!",
-                "Why did the math book look so sad? Because it had too many problems!"
+                "Why did the math book look so sad? Because it had too many problems!",
+                "What do you call a bear with no teeth? A gummy bear!",
+                "Why don't programmers like nature? It has too many bugs!"
             ]
             import random
             return random.choice(jokes)
         
         elif any(word in question_lower for word in ['thank you', 'thanks']):
-            return "You're welcome! Is there anything else I can help you with?"
+            return "You're very welcome! I'm always happy to help. Is there anything else you'd like to know?"
         
-        elif any(word in question_lower for word in ['name', 'who are you']):
-            return "I'm your voice assistant! I'm here to help answer questions and chat with you."
+        elif any(word in question_lower for word in ['name', 'who are you', 'what is your name']):
+            return "I'm Pari, your personal voice assistant! I'm here to help answer your questions, tell jokes, give you the time and date, and have conversations with you."
+        
+        elif any(word in question_lower for word in ['what can you do', 'help', 'capabilities']):
+            return "I can tell you the time and date, share jokes, answer questions, and have conversations with you! Just say Pari followed by what you need."
+        
+        elif any(word in question_lower for word in ['good morning', 'good afternoon', 'good evening']):
+            current_hour = int(time.strftime("%H"))
+            if current_hour < 12:
+                return "Good morning! I hope you're having a wonderful start to your day. How can I assist you?"
+            elif current_hour < 18:
+                return "Good afternoon! It's lovely to hear from you. What can I help you with today?"
+            else:
+                return "Good evening! I hope you've had a great day. How can I help you tonight?"
         
         return None
     
     def get_fallback_response(self, question: str) -> str:
         """Fallback response when no other options work"""
-        return "I'm sorry, I don't have access to external information right now. I can help with basic questions, tell jokes, or give you the time and date."
+        return "I'm sorry, I don't have access to that information right now. But I can help with basic questions, tell jokes, give you the time and date, or just chat with you!"
     
     def handle_special_commands(self, command: str) -> tuple[bool, bool]:
         """Handle special commands. Returns (should_continue, was_special_command)"""
@@ -220,11 +234,11 @@ class AdvancedVoiceAssistant:
     
     def run(self):
         """Main assistant loop"""
-        self.speak("Hello! I'm your advanced voice assistant. I'm ready to help you.")
-        print(f"🚀 Voice Assistant is running!")
+        self.speak("Hello! I'm Pari, your advanced voice assistant. I'm ready to help you with anything you need!")
+        print(f"🚀 Voice Assistant 'Pari' is running!")
         print(f"💬 Say '{self.wake_word}' followed by your question")
         print("🔧 Special commands: 'time', 'date', 'clear history', 'stop'")
-        print("🛑 Say 'stop' or 'quit' to exit\n")
+        print("🛑 Say 'Pari stop' or 'Pari quit' to exit\n")
         
         try:
             while True:
@@ -235,8 +249,8 @@ class AdvancedVoiceAssistant:
                     user_input_lower = user_input.lower()
                     print(f"🔍 Checking for wake word in: '{user_input_lower}'")
                     
-                    # Define wake words more clearly
-                    wake_words = ['hey assistant', 'assistant', 'hey']
+                    # Define wake words based on the set wake_word
+                    wake_words = [self.wake_word.lower(), f'hey {self.wake_word.lower()}']
                     wake_found = False
                     command = ""
                     
@@ -271,7 +285,7 @@ class AdvancedVoiceAssistant:
                         else:
                             self.speak("Yes, how can I help you?")
                     else:
-                        print("⚠️  Wake word not detected. Try saying 'Hey assistant' or 'Assistant' first.")
+                        print("⚠️  Wake word not detected. Try saying 'Pari' or 'Hey Pari' first.")
                 
                 # Brief pause to prevent excessive CPU usage
                 time.sleep(0.2)
