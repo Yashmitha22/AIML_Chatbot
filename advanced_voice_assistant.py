@@ -36,18 +36,37 @@ class AdvancedVoiceAssistant:
         
     def setup_tts(self):
         """Configure text-to-speech with better settings"""
-        voices = self.tts_engine.getProperty('voices')
-        if len(voices) > 0:
-            # Try to find a female voice
-            for i, voice in enumerate(voices):
-                if 'female' in voice.name.lower() or 'zira' in voice.name.lower():
-                    self.tts_engine.setProperty('voice', voice.id)
-                    break
-            else:
-                self.tts_engine.setProperty('voice', voices[0].id)
-        
-        self.tts_engine.setProperty('rate', 180)
-        self.tts_engine.setProperty('volume', 0.9)
+        try:
+            voices = self.tts_engine.getProperty('voices')
+            print(f"🔊 Found {len(voices)} voice(s)")
+            
+            if len(voices) > 0:
+                # Try to find a female voice
+                for i, voice in enumerate(voices):
+                    print(f"Voice {i}: {voice.name}")
+                    if 'female' in voice.name.lower() or 'zira' in voice.name.lower():
+                        self.tts_engine.setProperty('voice', voice.id)
+                        print(f"✅ Selected female voice: {voice.name}")
+                        break
+                else:
+                    self.tts_engine.setProperty('voice', voices[0].id)
+                    print(f"✅ Selected default voice: {voices[0].name}")
+            
+            # Set speech properties
+            self.tts_engine.setProperty('rate', 180)
+            self.tts_engine.setProperty('volume', 1.0)  # Maximum volume
+            print("✅ TTS configured successfully")
+            
+        except Exception as e:
+            print(f"❌ TTS setup error: {e}")
+            # Try to reinitialize
+            try:
+                self.tts_engine = pyttsx3.init()
+                self.tts_engine.setProperty('rate', 180)
+                self.tts_engine.setProperty('volume', 1.0)
+                print("✅ TTS reinitialized successfully")
+            except Exception as e2:
+                print(f"❌ TTS reinit failed: {e2}")
     
     def setup_apis(self):
         """Setup multiple API options"""
