@@ -29,7 +29,7 @@ class AdvancedVoiceAssistant:
         self.setup_apis()
         
         # Assistant settings
-        self.wake_word = "hey assistant"
+        self.wake_word = "Pari"
         self.conversation_history = []
         
     def setup_tts(self):
@@ -229,7 +229,7 @@ class AdvancedVoiceAssistant:
         try:
             while True:
                 # Listen for wake word + command in one go
-                user_input = self.listen_with_timeout(timeout=1, phrase_time_limit=15)
+                user_input = self.listen_with_timeout(timeout=2, phrase_time_limit=10)
                 
                 if user_input:
                     user_input_lower = user_input.lower()
@@ -274,7 +274,7 @@ class AdvancedVoiceAssistant:
                         print("⚠️  Wake word not detected. Try saying 'Hey assistant' or 'Assistant' first.")
                 
                 # Brief pause to prevent excessive CPU usage
-                time.sleep(0.1)
+                time.sleep(0.2)
                 
         except KeyboardInterrupt:
             print("\n🛑 Voice Assistant stopped by user")
