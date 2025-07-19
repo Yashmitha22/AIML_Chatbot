@@ -76,13 +76,13 @@ class AdvancedVoiceAssistant:
         self.tts_engine.say(text)
         self.tts_engine.runAndWait()
     
-    def listen_with_timeout(self, timeout: int = 5, phrase_time_limit: int = 10) -> Optional[str]:
+    def listen_with_timeout(self, timeout: int = 2, phrase_time_limit: int = 8) -> Optional[str]:
         """Enhanced listening with better error handling"""
         try:
             with self.microphone as source:
                 print("🎤 Listening...")
-                # Dynamic ambient noise adjustment
-                self.recognizer.adjust_for_ambient_noise(source, duration=1)
+                # Shorter ambient noise adjustment for faster response
+                self.recognizer.adjust_for_ambient_noise(source, duration=0.5)
                 # Listen with specified timeout
                 audio = self.recognizer.listen(source, timeout=timeout, phrase_time_limit=phrase_time_limit)
             
@@ -139,8 +139,26 @@ class AdvancedVoiceAssistant:
             print(f"❌ OpenAI API error: {e}")
             return "I'm sorry, I encountered an error while processing your request."
     
-    def get_local_response(self, question: str) -> str:
-        """Fallback responses when no API is available"""
+
+    def process_question(self, question: str) -> str:
+        """Process question using available APIs or fallback"""
+        # Always try local responses first for better reliability
+        local_response = self.try_local_response(question)
+        if local_response:
+            return local_response
+        
+        # If no local response found, try API
+        if self.apis['openai']['available']:
+            try:
+                return self.get_openai_response(question)
+            except Exception as e:
+                print(f"❌ API failed, using fallback: {e}")
+                return self.get_fallback_response(question)
+        else:
+            return self.get_fallback_response(question)
+    
+    def try_local_response(self, question: str) -> Optional[str]:
+        """Try to find a local response for common questions"""
         question_lower = question.lower()
         
         if any(word in question_lower for word in ['hello', 'hi', 'hey']):
@@ -152,11 +170,13 @@ class AdvancedVoiceAssistant:
         elif 'weather' in question_lower:
             return "I don't have access to weather data right now, but you can check your local weather app or website."
         
-        elif 'joke' in question_lower:
+        elif any(word in question_lower for word in ['joke', 'funny']):
             jokes = [
                 "Why don't scientists trust atoms? Because they make up everything!",
                 "Why did the scarecrow win an award? He was outstanding in his field!",
-                "Why don't eggs tell jokes? They'd crack each other up!"
+                "Why don't eggs tell jokes? They'd crack each other up!",
+                "What do you call a fake noodle? An impasta!",
+                "Why did the math book look so sad? Because it had too many problems!"
             ]
             import random
             return random.choice(jokes)
@@ -164,15 +184,14 @@ class AdvancedVoiceAssistant:
         elif any(word in question_lower for word in ['thank you', 'thanks']):
             return "You're welcome! Is there anything else I can help you with?"
         
-        else:
-            return "I'm sorry, I don't have access to external information right now. Please make sure your API key is configured for more advanced responses."
+        elif any(word in question_lower for word in ['name', 'who are you']):
+            return "I'm your voice assistant! I'm here to help answer questions and chat with you."
+        
+        return None
     
-    def process_question(self, question: str) -> str:
-        """Process question using available APIs or fallback"""
-        if self.apis['openai']['available']:
-            return self.get_openai_response(question)
-        else:
-            return self.get_local_response(question)
+    def get_fallback_response(self, question: str) -> str:
+        """Fallback response when no other options work"""
+        return "I'm sorry, I don't have access to external information right now. I can help with basic questions, tell jokes, or give you the time and date."
     
     def handle_special_commands(self, command: str) -> tuple[bool, bool]:
         """Handle special commands. Returns (should_continue, was_special_command)"""
@@ -214,15 +233,28 @@ class AdvancedVoiceAssistant:
                 
                 if user_input:
                     user_input_lower = user_input.lower()
+                    print(f"🔍 Checking for wake word in: '{user_input_lower}'")
                     
-                    # Check if wake word is present
-                    if any(wake in user_input_lower for wake in [self.wake_word, 'assistant', 'hey assistant']):
-                        # Extract command after wake word
-                        command = user_input_lower
-                        for wake in [self.wake_word, 'assistant', 'hey assistant']:
-                            if wake in command:
-                                command = command.split(wake, 1)[-1].strip()
-                                break
+                    # Define wake words more clearly
+                    wake_words = ['hey assistant', 'assistant', 'hey']
+                    wake_found = False
+                    command = ""
+                    
+                    # Check if any wake word is present
+                    for wake in wake_words:
+                        if wake in user_input_lower:
+                            wake_found = True
+                            # Extract command after wake word
+                            if wake in user_input_lower:
+                                parts = user_input_lower.split(wake, 1)
+                                if len(parts) > 1:
+                                    command = parts[1].strip()
+                                else:
+                                    command = ""
+                            break
+                    
+                    if wake_found:
+                        print(f"✅ Wake word detected! Command: '{command}'")
                         
                         if command:
                             # Handle special commands
@@ -238,6 +270,8 @@ class AdvancedVoiceAssistant:
                                 self.speak(response)
                         else:
                             self.speak("Yes, how can I help you?")
+                    else:
+                        print("⚠️  Wake word not detected. Try saying 'Hey assistant' or 'Assistant' first.")
                 
                 # Brief pause to prevent excessive CPU usage
                 time.sleep(0.1)
