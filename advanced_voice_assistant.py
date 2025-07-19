@@ -81,11 +81,34 @@ class AdvancedVoiceAssistant:
     
     def speak(self, text: str):
         """Enhanced speak function with better formatting"""
+        if not text:
+            return
+            
         # Clean up text for better speech
         text = text.replace('*', '').replace('#', '').replace('`', '')
-        print(f"🤖 Assistant: {text}")
-        self.tts_engine.say(text)
-        self.tts_engine.runAndWait()
+        text = text.replace('\\n', ' ').replace('\\t', ' ')
+        # Remove excessive whitespace
+        text = ' '.join(text.split())
+        
+        print(f"🤖 Pari: {text}")
+        
+        try:
+            # Ensure TTS engine is ready
+            self.tts_engine.stop()  # Stop any current speech
+            self.tts_engine.say(text)
+            self.tts_engine.runAndWait()
+            print("✅ Speech completed")
+        except Exception as e:
+            print(f"❌ Speech error: {e}")
+            # Try to reinitialize TTS if there's an error
+            try:
+                self.tts_engine = pyttsx3.init()
+                self.setup_tts()
+                self.tts_engine.say(text)
+                self.tts_engine.runAndWait()
+                print("✅ Speech completed after reinit")
+            except Exception as e2:
+                print(f"❌ Speech still failed: {e2}")
     
     def listen_with_timeout(self, timeout: int = 3, phrase_time_limit: int = 15) -> Optional[str]:
         """Enhanced listening with better error handling"""
@@ -159,20 +182,26 @@ class AdvancedVoiceAssistant:
             
             model = genai.GenerativeModel('gemini-pro')
             
-            # Create a simple prompt
-            prompt = f"You are Pari, a friendly voice assistant. Please answer the following question in a conversational and concise way: '{question}'"
+            # Create a conversational prompt
+            prompt = f"""You are Pari, a friendly voice assistant. Please respond to this question in a conversational way, as if you're speaking out loud. Keep your response to 2-3 sentences and be warm and helpful.
+
+Question: {question}"""
             
             response = model.generate_content(prompt)
             
-            answer = response.text.strip()
-            
-            # Store conversation
-            self.conversation_history.append([
-                {"role": "user", "content": question},
-                {"role": "assistant", "content": answer}
-            ])
-            
-            return answer
+            if response.text:
+                answer = response.text.strip()
+                
+                # Store conversation
+                self.conversation_history.append([
+                    {"role": "user", "content": question},
+                    {"role": "assistant", "content": answer}
+                ])
+                
+                print(f"✅ Got Gemini response: {answer[:50]}...")
+                return answer
+            else:
+                return "I'm sorry, I didn't get a proper response from the AI service."
             
         except Exception as e:
             print(f"❌ Google Gemini API error: {e}")
@@ -312,7 +341,11 @@ class AdvancedVoiceAssistant:
                         if not was_special:
                             print("🤔 Processing your question...")
                             response = self.process_question(command)
-                            self.speak(response)
+                            print(f"📝 Response ready: {response[:100]}...")
+                            if response:
+                                self.speak(response)
+                            else:
+                                self.speak("I'm sorry, I couldn't process that question.")
                         
                         # After handling a command, decide whether to stay awake or go back to sleep
                         # For now, we stay awake until told to sleep
