@@ -13,6 +13,7 @@ import os
 import time
 from typing import Optional, Dict, Any
 
+
 class AdvancedVoiceAssistant:
     def __init__(self):
         load_dotenv()
@@ -68,6 +69,15 @@ class AdvancedVoiceAssistant:
                 print(f"✅ {api_name.upper()} API configured")
             else:
                 print(f"⚠️  {api_name.upper()} API not configured")
+        
+        # Specific check for Gemini
+        gemini_key = os.getenv('GEMINI_API_KEY')
+        if gemini_key and gemini_key != 'your_google_gemini_api_key_here':
+            self.apis['google']['key'] = gemini_key
+            self.apis['google']['available'] = True
+            print("✅ Google Gemini API configured")
+        else:
+            print("⚠️  Google Gemini API not configured")
     
     def speak(self, text: str):
         """Enhanced speak function with better formatting"""
@@ -141,6 +151,32 @@ class AdvancedVoiceAssistant:
             print(f"❌ OpenAI API error: {e}")
             return "I'm sorry, I encountered an error while processing your request."
     
+    def get_google_gemini_response(self, question: str) -> str:
+        """Get response from Google Gemini API"""
+        try:
+            import google.generativeai as genai
+            genai.configure(api_key=self.apis['google']['key'])
+            
+            model = genai.GenerativeModel('gemini-pro')
+            
+            # Create a simple prompt
+            prompt = f"You are Pari, a friendly voice assistant. Please answer the following question in a conversational and concise way: '{question}'"
+            
+            response = model.generate_content(prompt)
+            
+            answer = response.text.strip()
+            
+            # Store conversation
+            self.conversation_history.append([
+                {"role": "user", "content": question},
+                {"role": "assistant", "content": answer}
+            ])
+            
+            return answer
+            
+        except Exception as e:
+            print(f"❌ Google Gemini API error: {e}")
+            return "I'm sorry, I had trouble connecting to the Google Gemini service."
 
     def process_question(self, question: str) -> str:
         """Process question using available APIs or fallback"""
@@ -149,12 +185,18 @@ class AdvancedVoiceAssistant:
         if local_response:
             return local_response
         
-        # If no local response found, try API
+        # If no local response found, try APIs in order of preference
+        if self.apis['google']['available']:
+            try:
+                return self.get_google_gemini_response(question)
+            except Exception as e:
+                print(f"❌ Google API failed, trying OpenAI: {e}")
+        
         if self.apis['openai']['available']:
             try:
                 return self.get_openai_response(question)
             except Exception as e:
-                print(f"❌ API failed, using fallback: {e}")
+                print(f"❌ OpenAI API failed, using fallback: {e}")
                 return self.get_fallback_response(question)
         else:
             return self.get_fallback_response(question)
