@@ -243,7 +243,7 @@ class AdvancedVoiceAssistant:
         try:
             while True:
                 # Listen for wake word + command in one go
-                user_input = self.listen_with_timeout(timeout=2, phrase_time_limit=10)
+                user_input = self.listen_with_timeout(timeout=3, phrase_time_limit=15)
                 
                 if user_input:
                     user_input_lower = user_input.lower()
@@ -269,6 +269,7 @@ class AdvancedVoiceAssistant:
                     
                     if wake_found:
                         print(f"✅ Wake word detected! Command: '{command}'")
+                        print("🛑 Stopped listening - Processing your request...")
                         
                         if command:
                             # Handle special commands
@@ -284,11 +285,14 @@ class AdvancedVoiceAssistant:
                                 self.speak(response)
                         else:
                             self.speak("Yes, how can I help you?")
+                        
+                        print("👂 Ready to listen again...")
+                        
                     else:
                         print("⚠️  Wake word not detected. Try saying 'Pari' or 'Hey Pari' first.")
                 
-                # Brief pause to prevent excessive CPU usage
-                time.sleep(0.2)
+                # Brief pause before listening again
+                time.sleep(0.5)
                 
         except KeyboardInterrupt:
             print("\n🛑 Voice Assistant stopped by user")
