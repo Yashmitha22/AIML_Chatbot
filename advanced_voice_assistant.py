@@ -37,34 +37,35 @@ class AdvancedVoiceAssistant:
     def setup_tts(self):
         """Configure text-to-speech with better settings"""
         try:
+            # Force reinitialize TTS for female voice
+            self.tts_engine = pyttsx3.init(driverName='sapi5')
+            
             voices = self.tts_engine.getProperty('voices')
             print(f"🔊 Found {len(voices)} voice(s)")
             
-            if len(voices) > 0:
-                # Try to find a female voice
-                for i, voice in enumerate(voices):
-                    print(f"Voice {i}: {voice.name}")
-                    if 'female' in voice.name.lower() or 'zira' in voice.name.lower():
-                        self.tts_engine.setProperty('voice', voice.id)
-                        print(f"✅ Selected female voice: {voice.name}")
-                        break
-                else:
-                    self.tts_engine.setProperty('voice', voices[0].id)
-                    print(f"✅ Selected default voice: {voices[0].name}")
+            if len(voices) > 1:
+                # FORCE use female voice (Zira - Index 1)
+                self.tts_engine.setProperty('voice', voices[1].id)
+                print(f"✅ Selected FEMALE voice: {voices[1].name}")
+            else:
+                print("❌ Female voice not available, using default")
             
-            # Set speech properties
+            # Set speech properties for clear female voice
             self.tts_engine.setProperty('rate', 180)
             self.tts_engine.setProperty('volume', 1.0)  # Maximum volume
             print("✅ TTS configured successfully")
             
         except Exception as e:
             print(f"❌ TTS setup error: {e}")
-            # Try to reinitialize
+            # Fallback initialization
             try:
                 self.tts_engine = pyttsx3.init()
+                voices = self.tts_engine.getProperty('voices')
+                if len(voices) > 1:
+                    self.tts_engine.setProperty('voice', voices[1].id)  # Force female
                 self.tts_engine.setProperty('rate', 180)
                 self.tts_engine.setProperty('volume', 1.0)
-                print("✅ TTS reinitialized successfully")
+                print("✅ TTS reinitialized with female voice")
             except Exception as e2:
                 print(f"❌ TTS reinit failed: {e2}")
     
@@ -423,23 +424,7 @@ Question: {question}"""
         return self.listen_with_timeout(timeout=8, phrase_time_limit=20)
 
 def main():
-    """Main function"""    def setup_tts(self):
-        try:
-            # Force reinitialize TTS for female voice
-            self.tts_engine = pyttsx3.init(driverName='sapi5')
-            
-            voices = self.tts_engine.getProperty('voices')
-            if len(voices) > 1:
-                # FORCE use female voice (Zira - Index 1)
-                self.tts_engine.setProperty('voice', voices[1].id)
-                print(f"✅ Selected FEMALE voice: {voices[1].name}")
-            
-            self.tts_engine.setProperty('rate', 180)
-            self.tts_engine.setProperty('volume', 1.0)
-            print("✅ TTS configured successfully")
-            
-        except Exception as e:
-            print(f"❌ TTS setup error: {e}")
+    """Main function"""
     print("🎙️  Advanced Voice Assistant")
     print("=" * 50)
     assistant = AdvancedVoiceAssistant()
