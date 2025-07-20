@@ -30,7 +30,7 @@ class AdvancedVoiceAssistant:
         self.setup_apis()
         
         # Assistant settings
-        self.wake_word = "Pari"
+        self.wake_word = ""
         self.conversation_history = []
         self.is_awake = False  # State to track if assistant is active
         
