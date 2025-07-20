@@ -40,12 +40,10 @@ def select_voice():
             tts_engine.setProperty('voice', voice.id)
             tts_engine.setProperty('rate', 180)
             tts_engine.setProperty('volume', 1.0)
-            
             tts_engine.say(test_text)
             tts_engine.runAndWait()
-            
             response = input(f"Do you like Voice {i} ({voice.name})? (y/n): ").lower().strip()
-            if response == 'y' or response == 'yes':
+            if response in ('y', 'yes'):
                 print(f"✅ Great! You selected: {voice.name}")
                 print(f"Voice ID: {voice.id}")
                 print(f"Voice Index: {i}")
