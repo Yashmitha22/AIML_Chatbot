@@ -20,7 +20,7 @@ class AdvancedVoiceAssistant:
         
         # Initialize speech components
         self.recognizer = sr.Recognizer()
-        self.microphone = sr.Microphone()
+        self.microphone = sr.Microphone(device_index=0)  # Use working microphone device 0
         self.tts_engine = pyttsx3.init()
         
         # Setup TTS
